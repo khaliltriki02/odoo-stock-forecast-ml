@@ -10,17 +10,32 @@ services:
       POSTGRES_PASSWORD: odoo
     ports:
       - "5432:5432"
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data
 
   odoo:
     image: odoo:17
     container_name: odoo-app
     depends_on:
       - db
+      - ml_service
     ports:
       - "8069:8069"
     environment:
       HOST: db
       USER: odoo
       PASSWORD: odoo
+      ML_SERVICE_URL: http://ml_service:8000
     volumes:
       - ./addons:/mnt/extra-addons
+
+  ml_service:
+    build: ./ml_service
+    container_name: ml-forecast-service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ml_service:/app
+
+volumes:
+  odoo-db-data:
