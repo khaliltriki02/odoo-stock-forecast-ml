@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ml_inventory_forecast.Dashboard" owl="1">
+        <div class="o_ml_dashboard p-4">
+            <h2 class="mb-4">📦 Prédiction intelligente des stocks</h2>
+
+            <div t-if="state.loading" class="text-center p-5">
+                <i class="fa fa-spinner fa-spin fa-2x"/>
+            </div>
+
+            <div t-if="!state.loading and state.data">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="o_ml_kpi_card bg-white shadow-sm rounded p-3">
+                            <div class="text-muted small">Prévisions totales</div>
+                            <div class="fs-3 fw-bold" t-esc="state.data.total_forecasts"/>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="o_ml_kpi_card bg-white shadow-sm rounded p-3 border-start border-danger border-4">
+                            <div class="text-muted small">Risque élevé</div>
+                            <div class="fs-3 fw-bold text-danger" t-esc="state.data.risk_counts.high"/>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="o_ml_kpi_card bg-white shadow-sm rounded p-3 border-start border-warning border-4">
+                            <div class="text-muted small">Risque moyen</div>
+                            <div class="fs-3 fw-bold text-warning" t-esc="state.data.risk_counts.medium"/>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="o_ml_kpi_card bg-white shadow-sm rounded p-3 border-start border-success border-4">
+                            <div class="text-muted small">Risque faible</div>
+                            <div class="fs-3 fw-bold text-success" t-esc="state.data.risk_counts.low"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="bg-white shadow-sm rounded p-3" style="height: 320px;">
+                            <h5>Répartition des risques</h5>
+                            <div style="height: 260px;">
+                                <canvas t-ref="pieCanvas"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <div class="bg-white shadow-sm rounded p-3" style="height: 320px;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="mb-0">Historique de la demande</h5>
+                                <select class="form-select form-select-sm w-auto" t-on-change="onSelectProduct">
+                                    <t t-foreach="state.data.products" t-as="p" t-key="p.product_id">
+                                        <option t-att-value="p.product_id" t-esc="p.product_name"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div style="height: 250px;">
+                                <canvas t-ref="lineCanvas"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div t-if="state.productData and state.productData.forecast" class="row mb-4">
+                    <div class="col-12">
+                        <div class="bg-white shadow-sm rounded p-3">
+                            <h5 t-esc="state.productData.product_name"/>
+                            <div class="row text-center">
+                                <div class="col">
+                                    <div class="text-muted small">Stock actuel</div>
+                                    <div class="fw-bold" t-esc="state.productData.current_stock"/>
+                                </div>
+                                <div class="col">
+                                    <div class="text-muted small">Demande prédite (30j)</div>
+                                    <div class="fw-bold" t-esc="state.productData.forecast.predicted_demand.toFixed(2)"/>
+                                </div>
+                                <div class="col">
+                                    <div class="text-muted small">Seuil de réappro</div>
+                                    <div class="fw-bold" t-esc="state.productData.forecast.reorder_point.toFixed(2)"/>
+                                </div>
+                                <div class="col">
+                                    <div class="text-muted small">Date de rupture estimée</div>
+                                    <div class="fw-bold" t-esc="state.productData.forecast.stockout_date or '—'"/>
+                                </div>
+                                <div class="col">
+                                    <div class="text-muted small">Modèle</div>
+                                    <div class="fw-bold" t-esc="state.productData.forecast.model_used"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white shadow-sm rounded p-3">
+                    <h5>Produits à surveiller</h5>
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th>Stock actuel</th>
+                                <th>Demande prédite</th>
+                                <th>Seuil réappro</th>
+                                <th>Rupture estimée</th>
+                                <th>Risque</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="state.data.products" t-as="p" t-key="p.product_id">
+                                <td t-esc="p.product_name"/>
+                                <td t-esc="p.current_stock"/>
+                                <td t-esc="p.predicted_demand.toFixed(2)"/>
+                                <td t-esc="p.reorder_point.toFixed(2)"/>
+                                <td t-esc="p.stockout_date or '—'"/>
+                                <td>
+                                    <span t-attf-class="badge bg-{{ p.risk == 'high' ? 'danger' : (p.risk == 'medium' ? 'warning' : 'success') }}"
+                                          t-esc="p.risk"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

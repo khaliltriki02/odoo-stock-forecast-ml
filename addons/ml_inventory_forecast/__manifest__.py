@@ -14,7 +14,16 @@
     'data': [
         'security/ir.model.access.csv',
         'views/stock_forecast_views.xml',
+        'views/dashboard_actions.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+            'ml_inventory_forecast/static/src/js/dashboard.js',
+            'ml_inventory_forecast/static/src/xml/dashboard.xml',
+            'ml_inventory_forecast/static/src/css/dashboard.css',
+        ],
+    },
     'installable': True,
     'application': True,
     'license': 'LGPL-3',

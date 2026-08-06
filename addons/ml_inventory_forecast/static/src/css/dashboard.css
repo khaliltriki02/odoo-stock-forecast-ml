@@ -1,0 +1,20 @@
+.o_action_manager .o_ml_dashboard {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.o_ml_dashboard {
+    height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.o_ml_dashboard .o_ml_kpi_card {
+    transition: transform 0.15s ease;
+}
+.o_ml_dashboard .o_ml_kpi_card:hover {
+    transform: translateY(-2px);
+}
+.o_ml_dashboard canvas {
+    max-height: 100%;
+}

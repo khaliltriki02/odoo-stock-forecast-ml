@@ -100,3 +100,74 @@ class StockForecast(models.Model):
             ('stockout_risk', '=', risk_level),
             ('forecast_date', '>=', fields.Date.today()),
         ])
+
+    @api.model
+    def get_dashboard_data(self):
+        forecasts = self.search([], order='forecast_date desc')
+
+        high = len(forecasts.filtered(lambda f: f.stockout_risk == 'high'))
+        medium = len(forecasts.filtered(lambda f: f.stockout_risk == 'medium'))
+        low = len(forecasts.filtered(lambda f: f.stockout_risk == 'low'))
+
+        products = []
+        seen = set()
+        for f in forecasts:
+            if f.product_id.id in seen:
+                continue
+            seen.add(f.product_id.id)
+            products.append({
+                'product_id': f.product_id.id,
+                'product_name': f.product_id.display_name,
+                'current_stock': f.product_id.qty_available,
+                'predicted_demand': f.predicted_demand,
+                'reorder_point': f.reorder_point_suggested,
+                'stockout_date': f.estimated_stockout_date.strftime('%Y-%m-%d') if f.estimated_stockout_date else None,
+                'risk': f.stockout_risk,
+                'model_used': f.model_used,
+            })
+
+        order = {'high': 0, 'medium': 1, 'low': 2}
+        products.sort(key=lambda p: order.get(p['risk'], 3))
+
+        return {
+            'total_forecasts': len(forecasts),
+            'risk_counts': {'high': high, 'medium': medium, 'low': low},
+            'products': products,
+        }
+
+    @api.model
+    def get_product_timeseries(self, product_id):
+        product = self.env['product.product'].browse(product_id)
+        moves = self.env['stock.move.line'].search([
+            ('product_id', '=', product_id),
+            ('state', '=', 'done'),
+        ], order='date asc')
+
+        daily = {}
+        for m in moves:
+            if m.date:
+                d = m.date.strftime('%Y-%m-%d')
+                daily[d] = daily.get(d, 0) + m.quantity
+
+        history = [{'date': d, 'quantity': q} for d, q in sorted(daily.items())]
+
+        last_forecast = self.search(
+            [('product_id', '=', product_id)], order='forecast_date desc', limit=1
+        )
+
+        forecast_data = None
+        if last_forecast:
+            forecast_data = {
+                'predicted_demand': last_forecast.predicted_demand,
+                'reorder_point': last_forecast.reorder_point_suggested,
+                'stockout_date': last_forecast.estimated_stockout_date.strftime('%Y-%m-%d') if last_forecast.estimated_stockout_date else None,
+                'risk': last_forecast.stockout_risk,
+                'model_used': last_forecast.model_used,
+            }
+
+        return {
+            'product_name': product.display_name,
+            'current_stock': product.qty_available,
+            'history': history,
+            'forecast': forecast_data,
+        }
