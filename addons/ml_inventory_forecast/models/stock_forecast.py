@@ -103,7 +103,8 @@ class StockForecast(models.Model):
 
     @api.model
     def get_dashboard_data(self):
-        forecasts = self.search([], order='forecast_date desc')
+        #forecasts = self.search([], order='forecast_date desc')
+        forecasts = self.search([], order='write_date desc')
 
         high = len(forecasts.filtered(lambda f: f.stockout_risk == 'high'))
         medium = len(forecasts.filtered(lambda f: f.stockout_risk == 'medium'))
@@ -152,7 +153,7 @@ class StockForecast(models.Model):
         history = [{'date': d, 'quantity': q} for d, q in sorted(daily.items())]
 
         last_forecast = self.search(
-            [('product_id', '=', product_id)], order='forecast_date desc', limit=1
+            [('product_id', '=', product_id)], order='write_date desc', limit=1
         )
 
         forecast_data = None
