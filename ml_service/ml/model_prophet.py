@@ -16,12 +16,16 @@ def train_prophet_model(daily_df, weekly_seasonality=True, yearly_seasonality=Fa
 def forecast_demand(model, periods=30, freq='D'):
     future = model.make_future_dataframe(periods=periods, freq=freq)
     forecast = model.predict(future)
-    return forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(periods)
+    result = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(periods).copy()
+    # La demande ne peut jamais être négative dans la réalité
+    result['yhat'] = result['yhat'].clip(lower=0)
+    result['yhat_lower'] = result['yhat_lower'].clip(lower=0)
+    return result
 
 
 def compute_reorder_point(forecast_df, current_stock, lead_time_days=7, safety_factor=1.2):
     lead_time_demand = forecast_df.head(lead_time_days)['yhat'].sum()
-    reorder_point = lead_time_demand * safety_factor
+    reorder_point = max(0, lead_time_demand * safety_factor)
     stockout_date = None
 
     cumulative = 0
